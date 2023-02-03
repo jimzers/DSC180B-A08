@@ -1,0 +1,25 @@
+# data science
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+opentsne
+umap-learn
+
+# deep learning
+torch
+torch_cka
+
+# reinforcement learning
+mujoco
+dm_control
+dm-acme[envs]
+
+# image processing
+pillow==8.4.0
+ffmpeg
+imageio[ffmpeg]
+
+# other
+protobuf==3.20.3
