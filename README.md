@@ -5,7 +5,7 @@ Scott Yang, Daniel Son, Akshay Murali, Adam Lee, Eric Leonardis, Talmo Pereira
 #### Repos combined:
 - https://github.com/danielcson/dsc_capstone_q1
 - https://github.com/scott-yj-yang/180A-codebase
-- <TODO: put akshays repo here>
+- https://github.com/akdec00/DSC-180A
 - https://github.com/jimzers/dsc180-ma5
 
 Entrypoint: Train expert SAC agent with `train_cheetah.py`
