@@ -35,7 +35,7 @@ if __name__ == '__main__':
                         help='name of environment')
     parser.add_argument('--num_episodes',
                         type=int,
-                        default=1000, help='number of episodes to collect')
+                        default=15, help='number of episodes to collect')
     parser.add_argument('--save_path',
                         type=str,
                         default='data/activations/cheetah_123456_10000',
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     obs_dim = sum([item.shape[0] for item in flat_obs])
 
     # setup agent
-    agent = SAC(obs_dim, env.action_spec(), args)
+    agent = SAC(obs_dim, env.action_spec(), model_args)
     # load checkpoint - UPLOAD YOUR FILE HERE!
     agent.load_checkpoint(args.model_path, evaluate=True)
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     idx_to_geom_names = {idx: geom_name for geom_name, idx in geom_names_to_idx.items()}
 
     # run a few episodes just to collect activations
-    num_episodes_to_run = 42
+    num_episodes_to_run = args.num_episodes
 
     # for recording kinematics
     total_kinematic_dict = {
