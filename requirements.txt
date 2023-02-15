@@ -10,11 +10,12 @@ umap-learn
 # deep learning
 torch
 torch_cka
+rsatoolbox
 
 # reinforcement learning
 mujoco
 dm_control
-dm-acme[envs]
+dm-acme[tf,envs]
 
 # image processing
 pillow==8.4.0
@@ -22,4 +23,5 @@ ffmpeg
 imageio[ffmpeg]
 
 # other
-protobuf==3.20.3
+protobuf<=3.20.3
+
