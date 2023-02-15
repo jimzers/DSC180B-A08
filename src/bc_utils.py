@@ -1,3 +1,8 @@
+import numpy as np
+import torch
+from src.environment import get_flat_obs
+
+
 ### Step 1: Make a data structure to store transitions.
 ### At the very least, you'll need observations and actions.
 
@@ -10,6 +15,7 @@ class TransitionStorage:
     def store_transition(self, obs, action):
         self.obs.append(obs)
         self.action.append(action)
+
 
 ### Step 2: Reuse the evaluate function, but now use it to collect data
 
@@ -72,6 +78,35 @@ def evaluate_network(network, num_episodes=100, deterministic=True):
             episode_rewards.append(reward)
 
         all_episode_rewards.append(sum(episode_rewards))
+
+    mean_episode_reward = np.mean(all_episode_rewards)
+    print("Mean reward:", mean_episode_reward, "Num episodes:", num_episodes)
+
+    return mean_episode_reward
+
+
+def evaluate_network_mujoco(network, env, num_episodes=10):
+    """
+    Evaluate a RL agent in a MuJoCo environment
+    """
+
+    all_episode_rewards = []
+
+    # run the loop
+    for i in range(num_episodes):
+        time_step = env.reset()
+        episode_reward = 0
+        while not time_step.last():  # or env.get_termination()
+            # get the state
+            state = get_flat_obs(time_step)
+            # sample an action
+            action = network(torch.tensor(state, dtype=torch.float32)).detach().numpy()
+            time_step = env.step(action)
+
+            # record reward
+            episode_reward += time_step.reward
+
+        all_episode_rewards.append(episode_reward)
 
     mean_episode_reward = np.mean(all_episode_rewards)
     print("Mean reward:", mean_episode_reward, "Num episodes:", num_episodes)
