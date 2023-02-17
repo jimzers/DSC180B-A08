@@ -1,6 +1,9 @@
 
-- [] Training procedure
-- [] Activation extraction
+- [x] Training procedure
+- [x] Activation extraction
+- [x] Behavioral Cloning Skeleton
+- [] Training
+    - [] Loss function from the continous action space
 - [] Environment functions
 - [] Call training loop
 - [] Call replay loop + extracting activations
