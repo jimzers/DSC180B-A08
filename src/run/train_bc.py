@@ -1,54 +1,129 @@
-### Step 5: Train the network
+"""
+Train a behavior cloning model
 
-# initialize the network
-network = BCNetworkDiscrete(env.observation_space.shape[0], env.action_space.n)
+Sample usage:
+python src/run/train_bc.py --rollout_path data/rollouts/cheetah_123456_10000/rollouts.pkl --save_path data/bc_model/cheetah_123456_10000 --epochs 10 --batch_size 32 --lr 3e-4
+"""
+import os
+import pickle
+import argparse
+import torch
+import torch.nn as nn
 
-# define the optimizer
-optimizer = torch.optim.Adam(network.parameters(), lr=1e-3)
+import tree
+from acme import wrappers
+from dm_control import suite
 
-# define the loss function
-loss_fn = nn.CrossEntropyLoss()
+from src.environment import NormilizeActionSpecWrapper, MujocoActionNormalizer
+from src.bc_net import BCNetworkContinuous
+from src.bc_utils import evaluate_network_mujoco
 
-# define the number of epochs
-num_epochs = 10
+if __name__ == '__main__':
+    # set up parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rollout_path',
+                        type=str,
+                        default='data/rollouts/cheetah_123456_10000/rollouts.pkl',
+                        help='path to rollouts')
+    parser.add_argument('--save_path',
+                        type=str,
+                        default='data/bc_model/cheetah_123456_10000',
+                        help='path to save bc model')
+    parser.add_argument('--epochs',
+                        type=int,
+                        default=10,
+                        help='number of epochs to train')
+    parser.add_argument('--batch_size',
+                        type=int,
+                        default=32,
+                        help='batch size')
+    parser.add_argument('--lr',
+                        type=float,
+                        default=3e-4,
+                        help='learning rate')
+    parser.add_argument('--env_name',
+                        type=str,
+                        default='HalfCheetah-v4',
+                        help='name of environment')
 
-# define the batch size
-batch_size = 32
+    # parse args
+    args = parser.parse_args()
 
-# define the number of batches
-num_batches = len(storage.obs) // batch_size
+    # load the environment
+    if args.env_name == 'HalfCheetah-v4':
+        env = suite.load(domain_name="cheetah", task_name="run")
+    else:
+        raise NotImplementedError
+    # add wrappers onto the environment
+    env = NormilizeActionSpecWrapper(env)
+    env = MujocoActionNormalizer(environment=env, rescale='clip')
+    env = wrappers.SinglePrecisionWrapper(env)
 
-# convert the data to tensors
-obs = torch.tensor(storage.obs, dtype=torch.float32).squeeze()
+    # get the dimensionality of the observation_spec after flattening
+    flat_obs = tree.flatten(env.observation_spec())
+    # combine all the shapes
+    obs_dim = sum([item.shape[0] for item in flat_obs])
 
-# convert integers into one-hot vectors
-action = torch.tensor(storage.action, dtype=torch.long).squeeze()
-action = torch.nn.functional.one_hot(action, num_classes=env.action_space.n)
-# convert action to float32
-action = action.float()
-print(action.type())
+    # load the rollouts
+    with open(args.rollout_path, 'rb') as f:
+        rollouts = pickle.load(f)
 
-# train the network
-for epoch in range(num_epochs):
-    # accumulate loss
-    epoch_loss = 0
-    for batch in range(num_batches):
-        # get the batch
-        batch_obs = obs[batch * batch_size: (batch + 1) * batch_size]
-        batch_action = action[batch * batch_size: (batch + 1) * batch_size]
+    ### Step 5: Train the network
 
-        # forward pass
-        logits = network(batch_obs)
+    # initialize the network
+    network = BCNetworkContinuous(obs_dim, env.action_spec().shape[0])
 
-        # compute the loss
-        loss = loss_fn(logits, batch_action)
+    # define the optimizer
+    optimizer = torch.optim.Adam(network.parameters(), lr=args.lr)
 
-        # backward pass
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    # define the loss function
+    loss_fn = nn.MSELoss()
+
+    # define the number of epochs
+    num_epochs = args.epochs
+
+    # define the batch size
+    batch_size = args.batch_size
+
+    # define the number of batches
+    num_batches = len(rollouts.obs) // batch_size
+
+    # convert the data to tensors
+    obs = torch.tensor(rollouts.obs, dtype=torch.float32).squeeze()
+    action = torch.tensor(rollouts.action, dtype=torch.float32).squeeze()
+
+    # train the network
+    for epoch in range(num_epochs):
         # accumulate loss
-        epoch_loss += loss.item()
+        epoch_loss = 0
+        for batch in range(num_batches):
+            # get the batch
+            batch_obs = obs[batch * batch_size: (batch + 1) * batch_size]
+            batch_action = action[batch * batch_size: (batch + 1) * batch_size]
 
-    # print the loss
-    print("Epoch: {}, Loss: {}".format(epoch, epoch_loss / num_batches))
+            # forward pass
+            logits = network(batch_obs)
+
+            # compute the loss
+            loss = loss_fn(logits, batch_action)
+
+            # backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            # accumulate loss
+            epoch_loss += loss.item()
+
+        # print the loss
+        print("Epoch: {}, Loss: {}".format(epoch, epoch_loss / num_batches))
+
+    # make the directory to save the model
+    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
+
+    # save the model
+    torch.save(network.state_dict(), args.save_path)
+
+    # evaluate the model
+    mean_episode_reward = evaluate_network_mujoco(network, env, num_episodes=10)
+
+    print("Done training behavior cloning model!")
