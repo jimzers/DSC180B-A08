@@ -33,9 +33,9 @@ class BCNetworkContinuous(nn.Module):
         self.obs_dim = obs_dim
         self.action_dim = action_dim
 
-        self.fc1 = nn.Linear(self.obs_dim, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, self.action_dim)
+        self.fc1 = nn.Linear(self.obs_dim, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, self.action_dim)
 
     def forward(self, obs):
         x = F.relu(self.fc1(obs))
