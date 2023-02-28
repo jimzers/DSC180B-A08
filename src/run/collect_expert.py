@@ -6,6 +6,7 @@ python src/run/collect_expert.py --model_path data/models/sac_checkpoint_cheetah
 """
 # imports
 import os
+import numpy as np
 import tree
 import argparse
 from acme import wrappers
@@ -36,6 +37,14 @@ if __name__ == '__main__':
                         type=str,
                         default='data/rollouts/cheetah_123456_10000',
                         help='path to save rollouts')
+    parser.add_argument('--act_noise',
+                        type=float,
+                        default=0.0,
+                        help='noise to add to actions')
+    parser.add_argument('--obs_noise',
+                        type=float,
+                        default=0.0,
+                        help='noise to add to observations')
 
     # parse args
     args = parser.parse_args()
@@ -89,6 +98,8 @@ if __name__ == '__main__':
     # run a few episodes just to collect activations
     num_episodes_to_run = args.num_episodes
 
+    episode_reward_arr = []
+
     # run the loop
     for i in range(num_episodes_to_run):
         time_step = env.reset()
@@ -96,8 +107,21 @@ if __name__ == '__main__':
         while not time_step.last():  # or env.get_termination()
             # get the state
             state = get_flat_obs(time_step)
+
+            # # add obs noise if desired
+            # state += np.random.uniform(-args.obs_noise, args.obs_noise, size=state.shape)
+
             # sample an action
             action = agent.select_action(state)
+
+            # add (uniform) action noise
+            if args.act_noise > 0:
+                action += np.random.uniform(-args.act_noise, args.act_noise, size=action.shape)
+                # action = action + np.random.normal(loc=0, scale=args.act_noise, size=action.shape)
+
+                # enforce boundaries
+                action = np.clip(action, -1, 1)
+
             time_step = env.step(action)
 
             # record reward
@@ -107,6 +131,7 @@ if __name__ == '__main__':
             storage.store_transition(state, action)
 
         print('Episode: {} Reward: {}'.format(i, episode_reward))
+        episode_reward_arr.append(episode_reward)
 
     # make folder from args.save_path
     os.makedirs(args.save_path, exist_ok=True)
@@ -116,3 +141,4 @@ if __name__ == '__main__':
         pickle.dump(storage, f)
 
     print('Done collecting rollouts!')
+    print('Average episode reward:', np.average(episode_reward_arr))
