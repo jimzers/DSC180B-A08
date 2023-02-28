@@ -87,7 +87,7 @@ def cka(X, Y):
     # return np.linalg.norm(x=x_yt, ord='fro') / (np.linalg.norm(x=x_xt, ord='fro') * np.linalg.norm(x=y_yt, ord='fro'))
 
 
-def plot_cka_kinematics(loaded_hook_dict, total_kinematic_dict):
+def plot_cka_kinematics(loaded_hook_dict, total_kinematic_dict, save_path=None):
     """
     plot cka similarity matrix between activations and kinematic features
     """
@@ -122,8 +122,10 @@ def plot_cka_kinematics(loaded_hook_dict, total_kinematic_dict):
                 figure_5b['cka'].append(cka_calc)
 
     df_b = pd.DataFrame(figure_5b).drop_duplicates().pivot('kinematic_feature', 'activation', 'cka')
-    plot_b = sns.heatmap(df_b, cbar_kws={'label': 'Feature encoding (CKA)'}, cmap="Blues")
-    plt.savefig("src/visualization/outputs/cka_activation_vs_kinematic.png")
+
+    # force the range of the heatmap to be between 0 and 1
+    plot_b = sns.heatmap(df_b, cbar_kws={'label': 'Feature encoding (CKA)'}, cmap="Blues", vmin=0, vmax=1)
+    plt.savefig(save_path)
 
     return plot_b
 
@@ -149,6 +151,31 @@ def plot_cka_activations(loaded_hook_dict, save_path='src/viz/cka_activations.pn
 
     df_c = pd.DataFrame(figure_5c).pivot('activation_1', 'activation_2', 'cka')
     plot_c = sns.heatmap(df_c, cbar_kws={'label': 'Representational similarity (CKA)'}, cmap="Blues")
+    plt.savefig(save_path)
+    return plot_c
+
+def plot_cka_activations_between_models(loaded_hook_dict, loaded_hook_dict2, save_path='src/viz/cka_activations_compare.png'):
+    """
+    plot cka similarity matrix between activation layers
+    """
+    # part c
+    figure_5c = {'activation_1': [],
+                 'activation_2': [],
+                 'cka': []}
+
+    # get combinations between activations
+    for activation1 in loaded_hook_dict.keys():
+        for activation2 in loaded_hook_dict2.keys():
+            cka_calc = cka(loaded_hook_dict[activation1], loaded_hook_dict2[activation2])
+            if activation1 == activation2:
+                cka_calc = 1
+            figure_5c['cka'].append(cka_calc)
+            figure_5c['activation_1'].append(activation1)
+            figure_5c['activation_2'].append(activation2)
+
+    df_c = pd.DataFrame(figure_5c).pivot('activation_1', 'activation_2', 'cka')
+    # force bar to be between 0 and 1
+    plot_c = sns.heatmap(df_c, cbar_kws={'label': 'Representational similarity (CKA)'}, cmap='Blues', vmin=0, vmax=1)
     plt.savefig(save_path)
     return plot_c
 
