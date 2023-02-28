@@ -54,3 +54,13 @@ TODO: Run analysis
 ```bash
 python run_analysis --policy=path/to/policy --analysis_path=path/to/analysis 
 ```
+
+
+### Fire and forget bash scripts
+
+```bash
+bash scripts/collect_expert.sh
+bash scripts/train_bc.sh
+bash scripts/collect_activations.sh
+bash scripts/collect_activations_bc.sh
+```
