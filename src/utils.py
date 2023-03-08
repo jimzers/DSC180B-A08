@@ -69,6 +69,13 @@ def get_kinematics(physics, geom_nams, joint_names, actuator_names):
         'actuator_forces': actuator_forces
     }
 
+def get_geoms(physics, geom_nams):
+    geom_positions = physics.named.data.geom_xpos[geom_nams]
+
+    return {
+        'geom_positions': geom_positions,
+    }
+
 
 def create_stitched_img(env, num_cams=2, img_height=256, img_width=256):
     tmp_img_arr = []
