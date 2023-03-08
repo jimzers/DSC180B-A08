@@ -112,3 +112,36 @@ def evaluate_network_mujoco(network, env, num_episodes=10):
     print("Mean reward:", mean_episode_reward, "Num episodes:", num_episodes)
 
     return mean_episode_reward
+
+
+def evaluate_network_mujoco_stochastic(network, env, num_episodes=10):
+    """
+    Evaluate a RL agent in a MuJoCo environment
+    """
+
+    all_episode_rewards = []
+
+    # run the loop
+    for i in range(num_episodes):
+        time_step = env.reset()
+        episode_reward = 0
+        while not time_step.last():  # or env.get_termination()
+            # get the state
+            state = get_flat_obs(time_step)
+
+            state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            # sample an action
+            _, _, action = network.sample(state)
+            action = action.detach().numpy()
+
+            time_step = env.step(action)
+
+            # record reward
+            episode_reward += time_step.reward
+
+        all_episode_rewards.append(episode_reward)
+
+    mean_episode_reward = np.mean(all_episode_rewards)
+    print("Mean reward:", mean_episode_reward, "Num episodes:", num_episodes)
+
+    return mean_episode_reward
