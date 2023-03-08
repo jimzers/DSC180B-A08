@@ -2,7 +2,7 @@
 Extract activations from a behavioral cloning model
 
 Sample usage:
-python src/run/extract_activations_bc.py --model_path data/bc_model/sac_cheetah_123456_10000 --env_name HalfCheetah-v4 --num_episodes 100 --save_path data/activations/cheetah_123456_10000_bcmodel
+python src/run/extract_activations_bc.py --model_path data/bc_model/cheetah_123456_10000 --env_name HalfCheetah-v4 --num_episodes 100 --save_path data/activations/cheetah_123456_10000_bcmodel
 """
 # imports
 import os
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path',
                         type=str,
-                        default='data/bc_model/sac_checkpoint_cheetah_123456_10000',
+                        default='data/bc_model/cheetah_123456_10000',
                         help='path to model')
     parser.add_argument('--env_name',
                         type=str,
