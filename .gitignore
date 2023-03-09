@@ -6,3 +6,5 @@ venv/
 *.pyc
 
 notebooks/frames/
+notebooks/frames_bc/
+notebooks/frames_bc_noise/
