@@ -74,6 +74,8 @@ if __name__ == '__main__':
     # load the environment
     if args.env_name == 'HalfCheetah-v4':
         env = suite.load(domain_name="cheetah", task_name="run")
+    elif args.env_name == 'Walker-v1':
+        env = suite.load(domain_name="walker", task_name="walk")
     else:
         raise NotImplementedError
     # add wrappers onto the environment
@@ -84,7 +86,15 @@ if __name__ == '__main__':
     # get the dimensionality of the observation_spec after flattening
     flat_obs = tree.flatten(env.observation_spec())
     # combine all the shapes
-    obs_dim = sum([item.shape[0] for item in flat_obs])
+    if args.env_name == 'HalfCheetah-v4':
+        obs_dim = sum([item.shape[0] for item in flat_obs])
+    else:
+        obs_dim = 0
+        for item in flat_obs:
+            try:
+                obs_dim += item.shape[0]
+            except IndexError:
+                obs_dim += 1
 
     # load the rollouts
     with open(args.rollout_path, 'rb') as f:
@@ -94,7 +104,7 @@ if __name__ == '__main__':
 
     # initialize the network
 
-    network = GaussianPolicy(obs_dim, env.action_spec().shape[0], hidden_dim=256).to(device)
+    network = GaussianPolicy(obs_dim, env.action_spec().shape[0], hidden_dim=1024).to(device)  # TODO: make this a parameter
 
     guide_dist = torch.distributions.Normal(torch.zeros(env.action_spec().shape[0]).to(device),
                                             torch.ones(env.action_spec().shape[0]).to(device))
@@ -198,7 +208,7 @@ if __name__ == '__main__':
     torch.save(network.state_dict(), model_filename)
 
     # evaluate the model
-    mean_episode_reward = evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device=device)
+    mean_episode_reward = evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device=device, obs_hack=True)
 
     # plot the distribution of the kl_div, mse_loss, entropy_loss, loss with shared x axis but separate y axes
     fig, ax = plt.subplots(len(loss_names) + 1, 1, sharex=True, figsize=(8, 8*(len(loss_names) + 1)))

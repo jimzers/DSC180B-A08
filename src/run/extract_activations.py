@@ -18,9 +18,13 @@ from src.sac import SAC
 from src.environment import NormilizeActionSpecWrapper, MujocoActionNormalizer, get_flat_obs
 from src.activations import init_hook_dict, recordtodict_hook, get_kinematics, save_hook_dict
 
-GEOM_NAMES = ['ground', 'torso', 'head', 'bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
-JOINT_NAMES = ['bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
-ACTUATOR_NAMES = ['bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
+# GEOM_NAMES = ['ground', 'torso', 'head', 'bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
+# JOINT_NAMES = ['bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
+# ACTUATOR_NAMES = ['bthigh', 'bshin', 'bfoot', 'fthigh', 'fshin', 'ffoot']
+
+GEOM_NAMES = ['floor', 'torso', 'right_thigh', 'right_leg', 'right_foot', 'left_thigh', 'left_leg', 'left_foot']
+JOINT_NAMES = ['rootz', 'rootx', 'rooty', 'right_hip', 'right_knee', 'right_ankle', 'left_hip', 'left_knee', 'left_ankle']
+ACTUATOR_NAMES = ['right_hip', 'right_knee', 'right_ankle', 'left_hip', 'left_knee', 'left_ankle']
 
 if __name__ == '__main__':
     # set up parser
@@ -47,6 +51,8 @@ if __name__ == '__main__':
     # load the environment
     if args.env_name == 'HalfCheetah-v4':
         env = suite.load(domain_name="cheetah", task_name="run")
+    elif args.env_name == 'Walker-v1':
+        env = suite.load(domain_name="walker", task_name="walk")
     else:
         raise NotImplementedError
     # add wrappers onto the environment
@@ -65,9 +71,9 @@ if __name__ == '__main__':
         alpha = 0.2
         automatic_entropy_tuning = True
         seed = 42
-        batch_size = 256
+        batch_size = 512
         num_steps = 1000000
-        hidden_size = 256
+        hidden_size = 1024
         updates_per_step = 1
         start_steps = 10000
         target_update_interval = 1
@@ -80,7 +86,15 @@ if __name__ == '__main__':
     # get the dimensionality of the observation_spec after flattening
     flat_obs = tree.flatten(env.observation_spec())
     # combine all the shapes
-    obs_dim = sum([item.shape[0] for item in flat_obs])
+    if args.env_name == 'HalfCheetah-v4':
+        obs_dim = sum([item.shape[0] for item in flat_obs])
+    else:
+        obs_dim = 0
+        for item in flat_obs:
+            try:
+                obs_dim += item.shape[0]
+            except IndexError:
+                obs_dim += 1
 
     # setup agent
     agent = SAC(obs_dim, env.action_spec(), model_args)
@@ -125,7 +139,13 @@ if __name__ == '__main__':
         episode_reward = 0
         while not time_step.last():  # or env.get_termination()
             # get the state
-            state = get_flat_obs(time_step)
+            if args.env_name == 'HalfCheetah-v4':
+                state = get_flat_obs(time_step)
+            else:
+                flat_obs = tree.flatten(time_step.observation)
+                flat_obs[0] = flat_obs[0].reshape(-1, 1)[0]
+                state = np.concatenate(flat_obs)
+
             # sample an action
             action = agent.select_action(state, evaluate=True)
             time_step = env.step(action)

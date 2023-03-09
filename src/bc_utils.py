@@ -113,8 +113,8 @@ def evaluate_network_mujoco(network, env, num_episodes=10):
 
     return mean_episode_reward
 
-
-def evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device='cpu'):
+import tree
+def evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device='cpu', obs_hack=False):
     """
     Evaluate a RL agent in a MuJoCo environment
     """
@@ -127,7 +127,12 @@ def evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device='cp
         episode_reward = 0
         while not time_step.last():  # or env.get_termination()
             # get the state
-            state = get_flat_obs(time_step)
+            if obs_hack == 'HalfCheetah-v4':
+                state = get_flat_obs(time_step)
+            else:
+                flat_obs = tree.flatten(time_step.observation)
+                flat_obs[0] = flat_obs[0].reshape(-1, 1)[0]
+                state = np.concatenate(flat_obs)
 
             state = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(device)
             # sample an action
