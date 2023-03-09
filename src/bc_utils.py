@@ -114,7 +114,7 @@ def evaluate_network_mujoco(network, env, num_episodes=10):
     return mean_episode_reward
 
 
-def evaluate_network_mujoco_stochastic(network, env, num_episodes=10):
+def evaluate_network_mujoco_stochastic(network, env, num_episodes=10, device='cpu'):
     """
     Evaluate a RL agent in a MuJoCo environment
     """
@@ -129,10 +129,10 @@ def evaluate_network_mujoco_stochastic(network, env, num_episodes=10):
             # get the state
             state = get_flat_obs(time_step)
 
-            state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            state = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(device)
             # sample an action
             _, _, action = network.sample(state)
-            action = action.detach().numpy()
+            action = action.detach().cpu().numpy()
 
             time_step = env.step(action)
 

@@ -49,6 +49,8 @@ if __name__ == '__main__':
     # parse args
     args = parser.parse_args()
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     # load the environment
     if args.env_name == 'HalfCheetah-v4':
         env = suite.load(domain_name="cheetah", task_name="run")
@@ -71,13 +73,13 @@ if __name__ == '__main__':
     ### Step 5: Train the network
 
     # initialize the network
-    network = BCNetworkContinuous(obs_dim, env.action_spec().shape[0])
+    network = BCNetworkContinuous(obs_dim, env.action_spec().shape[0]).to(device)
 
     # define the optimizer
     optimizer = torch.optim.Adam(network.parameters(), lr=args.lr)
 
     # define the loss function
-    loss_fn = nn.MSELoss()
+    loss_fn = nn.MSELoss().to(device)
 
     # define the number of epochs
     num_epochs = args.epochs
@@ -89,8 +91,8 @@ if __name__ == '__main__':
     num_batches = len(rollouts.obs) // batch_size
 
     # convert the data to tensors
-    obs = torch.tensor(rollouts.obs, dtype=torch.float32).squeeze()
-    action = torch.tensor(rollouts.action, dtype=torch.float32).squeeze()
+    obs = torch.tensor(rollouts.obs, dtype=torch.float32).squeeze().to(device)
+    action = torch.tensor(rollouts.action, dtype=torch.float32).squeeze().to(device)
 
     # train the network
     for epoch in range(num_epochs):
@@ -112,7 +114,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
             # accumulate loss
-            epoch_loss += loss.item()
+            epoch_loss += loss.detach().cpu().item()
 
         # print the loss
         print("Epoch: {}, Loss: {}".format(epoch, epoch_loss / num_batches))
