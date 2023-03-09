@@ -143,8 +143,7 @@ def plot_cka_activations(loaded_hook_dict, save_path='src/viz/cka_activations.pn
     for activation1 in loaded_hook_dict.keys():
         for activation2 in loaded_hook_dict.keys():
             cka_calc = cka(loaded_hook_dict[activation1], loaded_hook_dict[activation2])
-            if activation1 == activation2:
-                cka_calc = 1
+  
             figure_5c['cka'].append(cka_calc)
             figure_5c['activation_1'].append(activation1)
             figure_5c['activation_2'].append(activation2)
@@ -167,15 +166,14 @@ def plot_cka_activations_between_models(loaded_hook_dict, loaded_hook_dict2, sav
     for activation1 in loaded_hook_dict.keys():
         for activation2 in loaded_hook_dict2.keys():
             cka_calc = cka(loaded_hook_dict[activation1], loaded_hook_dict2[activation2])
-            if activation1 == activation2:
-                cka_calc = 1
+      
             figure_5c['cka'].append(cka_calc)
             figure_5c['activation_1'].append(activation1)
             figure_5c['activation_2'].append(activation2)
 
     df_c = pd.DataFrame(figure_5c).pivot('activation_1', 'activation_2', 'cka')
-    # force bar to be between 0 and 1
-    plot_c = sns.heatmap(df_c, cbar_kws={'label': 'Representational similarity (CKA)'}, cmap='Blues', vmin=0, vmax=1)
+   
+    plot_c = sns.heatmap(df_c, cbar_kws={'label': 'Representational similarity (CKA)'}, cmap='Blues')
     plt.savefig(save_path)
     return plot_c
 
