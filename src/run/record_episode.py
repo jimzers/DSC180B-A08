@@ -127,7 +127,7 @@ if __name__ == '__main__':
         # get the state
         state = get_flat_obs(time_step)
         # sample an action
-        action = agent.select_action(state)
+        action = agent.select_action(state, evaluate=True)
         time_step = env.step(action)
 
         # record video

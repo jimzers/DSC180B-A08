@@ -112,7 +112,7 @@ if __name__ == '__main__':
             # state += np.random.uniform(-args.obs_noise, args.obs_noise, size=state.shape)
 
             # sample an action
-            action = agent.select_action(state)
+            action = agent.select_action(state, evaluate=True)
 
             # add (uniform) action noise
             if args.act_noise > 0:
